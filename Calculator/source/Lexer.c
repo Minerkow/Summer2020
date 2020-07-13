@@ -1,11 +1,11 @@
-#include "HashTable.h"
-#include "Lexer.h"
+#include "../include/HashTable.h"
+#include "../include/Lexer.h"
 
-static void swap_lexems(struct lexem_t* lexem1, struct lexem_t* lexem2)
+static void swap_lexems(struct lex_array_t* larr, int index1, int index2)
 {
-    struct lexem_t copy = *lexem1;
-    *lexem1 = *lexem2;
-    *lexem2 = copy;
+    struct lexem_t copy = larr->lexems[index1];
+    larr->lexems[index1] = larr->lexems[index2];
+    larr->lexems[index2] = copy;
 }
 
 struct lex_array_t lex_string(const char *str) {
@@ -132,12 +132,13 @@ struct lex_array_t lex_string(const char *str) {
         }
 
         //Read Special Characters
+        assert(i - 1 > 0);
         if (str[i] == '?')
         {
             larr.lexems[larr.size].kind = COMMAND;
             larr.lexems[larr.size].lex.com = INPUT;
             larr.size++;
-            i++;
+            i ++;
             continue;
         }
 

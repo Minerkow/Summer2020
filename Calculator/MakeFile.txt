@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -g -Wall -std=c99 -I include
+CFLAGS = -O0 -g -Wall -std=c99 -I include
 SOURCES = HashTable.c Lexer.c Parser.c main.c
 HEADERS = HashTable.h Lexer.h Parser.h
 OBJECTS = $(SOURCES:.c=.o)

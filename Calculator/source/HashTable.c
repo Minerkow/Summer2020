@@ -1,7 +1,5 @@
-//
-// Created by Minerkow on 10.04.2020.
-//
-#include "HashTable.h"
+
+#include "../include/HashTable.h"
 
 struct variable_t
 {

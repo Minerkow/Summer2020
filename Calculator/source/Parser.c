@@ -1,6 +1,7 @@
 
-#include "Parser.h"
-#include "HashTable.h"
+#include "../include/Parser.h"
+#include "../include/HashTable.h"
+#include "../include/Lexer.h"
 
 static struct lexem_t get_cur_lexem (int i, struct lex_array_t* ptr);
 static int get_cur_size(struct lex_array_t* ptr);
@@ -10,21 +11,26 @@ static int is_brace(int i);
 static bool is_assign(int i);
 static bool is_stop(int i);
 static bool is_num_input_variable(int i);
+static bool is_print_assign(int i);
 
 
 static struct lexem_t get_cur_lexem (int i, struct lex_array_t* ptr)
 {
     static struct lex_array_t* larr = NULL;
-    if (ptr != NULL)
+    if (ptr != NULL) {
         larr = ptr;
+    }
+    assert(larr);
     return (larr->lexems[i]);
 }
 
 static int get_cur_size(struct lex_array_t* ptr)
 {
     static struct lex_array_t* larr = NULL;
-    if (ptr != NULL)
+    if (ptr != NULL) {
         larr = ptr;
+    }
+    assert(larr);
     return (larr->size);
 }
 
@@ -73,31 +79,24 @@ static bool is_num_input_variable(int i)
     return res;
 }
 
-void Analyzer (struct lex_array_t larr)
-{
-    int i = 0;
-    while (i < larr.size)
-    {
-        BuildTree(larr, &i);
-        i++;
-    }
-    free_all(larr);
+static bool is_print_assign(int i){
+    return (get_cur_lexem(i, NULL).kind == COMMAND &&
+            (get_cur_lexem(i, NULL).lex.com == PRINT ||
+            get_cur_lexem(i, NULL).lex.com == ASSIGN));
 }
 
-void BuildTree (struct lex_array_t larr, int* j)
+struct node_t* BuildTree (struct lex_array_t larr)
 {
-    int i = *j;
+    int i = 0;
     get_cur_lexem(0, &larr);
     get_cur_size(&larr);
     struct node_t* top = Comm(&i);
-    (*j) = i;
     if (top == NULL)
     {
         printf ("Empty input");
         exit(1);
     }
-    calc_result(top);
-    free_tree(top);
+    return top;
 }
 
 int calc_result(struct node_t *top)
@@ -170,34 +169,23 @@ int calc (int l, int r, struct node_t *top)
     }
 }
 
-struct node_t* Comm(int* i)
-{
-    struct node_t* node = NULL;
-    struct node_t* comm_left = NULL;
-    if (is_print(*i))
-    {
-        node = Create_Node();
-        node->lexem = get_cur_lexem(*i, NULL);
-        //print_node(get_cur_lexem(*i, NULL));
-        (*i)++;
-        node->left = Expr(i);
-        node->right = NULL;
-        return node;
-    }
-    comm_left = Expr(i);
-    //print_node(comm_left->lexem);
+struct node_t* Comm(int* i) {
+    struct node_t *node = NULL;
+    struct node_t *comm_left = Expr(i);
     if (is_stop(*i))
         return comm_left;
-    if(is_assign(*i)) {
+    while (is_print_assign(*i)) {
+        if (is_stop(*i))
+            return comm_left;
+
         node = Create_Node();
         node->lexem = get_cur_lexem(*i, NULL);
-        //print_node(node->lexem);
         (*i)++;
-        //printf ("_%d_", (*i));
+
         node->left = comm_left;
         node->right = Expr(i);
-        //print_node(node->right->lexem);
-        return node;
+
+        comm_left = node;
     }
     return comm_left;
 }
@@ -211,14 +199,11 @@ struct node_t* Expr(int* i)
 
     while (is_add_sub(*i) && get_cur_lexem(*i, NULL).kind == OP)
     {
-/*        if (*i >= get_cur_size(NULL) - 1)
-            return expr_left;*/
         if (is_stop(*i))
             return expr_left;
 
         node = Create_Node();
         node->lexem = get_cur_lexem(*i, NULL);
-
         (*i)++;
 
         //printf("_%d_", get_cur_lexem(*i, NULL).kind);
