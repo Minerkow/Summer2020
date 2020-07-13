@@ -1,0 +1,28 @@
+CC = gcc
+CFLAGS = -g -Wall -std=c99 -I include
+SOURCES = HashTable.c Lexer.c Parser.c main.c
+HEADERS = HashTable.h Lexer.h Parser.h
+OBJECTS = $(SOURCES:.c=.o)
+
+HashTable.o: source/HashTable.c include/HashTable.h
+	$(CC) $(CFLAGS) source/HashTable.c -c -o object/HashTable.o
+
+Lexer.o: source/Lexer.c include/Lexer.h
+	$(CC) $(CFLAGS) source/Lexer.c -c -o object/Lexer.o
+
+Parser.o: source/Parser.c include/Parser.h
+	$(CC) $(CFLAGS) source/Parser.c -c -o object/Parser.o
+
+main.o: main.c
+	$(CC) $(CFLAGS) main.c -c -o object/main.o
+
+.PHONY: all
+all: Parser.o HashTable.o Lexer.o main.o
+	$(CC) $(CFLAGS) object/Parser.o object/HashTable.o object/Lexer.o object/main.o -o calc
+
+
+.PHONY: clean
+clean:
+	rm -r -f $(OBJECTS)
+	rm -f main
+	rm -r -f cache.o
