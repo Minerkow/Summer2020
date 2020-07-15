@@ -6,9 +6,10 @@
 #include <stdbool.h>
 #include <string.h>
 #include <ctype.h>
+#include <values.h>
 
 // lexem is operation | brace | number
-enum lexem_kind_t {  OP , BRACE, NUM ,  VARIABLE, COMMAND};
+enum lexem_kind_t {  OP , BRACE, NUM ,  VARIABLE, COMMAND, SENTENSE, VOID};
 
 // operation is: +, -, *, /
 enum operation_t { ADD, SUB, MUL, DIV };
@@ -18,6 +19,8 @@ enum braces_t {  LBRAC , RBRAC };
 
 //command is: print, ?, =, ;
 enum command_t { PRINT, INPUT, ASSIGN, END_COMMAND};
+
+enum {POISON = MAXINT};
 
 // lexem is one of lexem kind entities
 // if (l.kind == BRACE)

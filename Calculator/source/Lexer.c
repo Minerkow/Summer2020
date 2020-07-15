@@ -160,7 +160,7 @@ struct lex_array_t lex_string(const char *str) {
             continue;
         }
     }
-
+    larr.lexems = (struct lexem_t *)realloc(larr.lexems, sizeof(struct lexem_t) * larr.size );
     //free_hash_table(hash_table);
     return larr;
 }
@@ -201,7 +201,7 @@ print_command(enum command_t command){
         case INPUT: printf(" INPUT"); break;
         case PRINT: printf(" PRINT"); break;
         case ASSIGN: printf(" ASSIGN"); break;
-        case END_COMMAND: printf(" END_COMMAND"); break;
+        case END_COMMAND: printf(" END_COMMAND\n"); break;
         default: assert(0 && "unknown command");
     }
 }

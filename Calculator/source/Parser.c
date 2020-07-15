@@ -9,6 +9,7 @@ static bool is_add_sub (int i);
 static bool is_mul_div(int i);
 static int is_brace(int i);
 static bool is_assign(int i);
+//static bool is_end(int i);
 static bool is_stop(int i);
 static bool is_num_input_variable(int i);
 static bool is_print_assign(int i);
@@ -50,7 +51,7 @@ static int is_brace(int i)
         return LBRAC;
     if (get_cur_lexem(i, NULL).lex.b == RBRAC && get_cur_lexem(i, NULL).kind == BRACE)
         return RBRAC;
-    return 0;
+    return POISON;
 }
 
 static bool is_assign(int i)
@@ -90,7 +91,7 @@ struct node_t* BuildTree (struct lex_array_t larr)
     int i = 0;
     get_cur_lexem(0, &larr);
     get_cur_size(&larr);
-    struct node_t* top = Comm(&i);
+    struct node_t* top = Sentense(&i);
     if (top == NULL)
     {
         printf ("Empty input");
@@ -169,24 +170,51 @@ int calc (int l, int r, struct node_t *top)
     }
 }
 
+struct node_t* Sentense(int* i){
+    struct node_t* node = Create_Node();
+    struct node_t* top = node;
+    int num = 0;
+    while((*i) <= get_cur_size(NULL) - 1)
+    {
+        node->lexem.kind = SENTENSE;
+        node->lexem.lex.num = num;
+        num++;
+        node->left = Comm(i);
+        if(!is_stop(*i))
+        {
+            fprintf(stderr, "\nExpected ';' : line - %d, i - %d", __LINE__, *i);
+            exit(0);
+        }
+        (*i)++;
+        node->right = Create_Node();
+        node->right->lexem.kind = VOID;
+        node = node->right;
+    }
+    return top;
+}
+
 struct node_t* Comm(int* i) {
     struct node_t *node = NULL;
     struct node_t *comm_left = Expr(i);
+    //printf("_%d_", *i);
     if (is_stop(*i))
         return comm_left;
-    while (is_print_assign(*i)) {
-        if (is_stop(*i))
-            return comm_left;
-
-        node = Create_Node();
-        node->lexem = get_cur_lexem(*i, NULL);
+    node = Create_Node();
+    node->lexem = get_cur_lexem(*i, NULL);
+    if (is_print(*i)){
         (*i)++;
-
-        node->left = comm_left;
-        node->right = Expr(i);
-
-        comm_left = node;
+       node->left = Expr(i);
+       node->right = Create_Node();
+       node->right->lexem.kind = VOID;
     }
+    if (is_assign(*i)) {
+        (*i)++;
+       node->left = comm_left;
+        //printf("_%d_", *i);
+        node->right = Expr(i);
+        //printf("_%d_", *i);
+    }
+    comm_left = node;
     return comm_left;
 }
 
@@ -208,11 +236,10 @@ struct node_t* Expr(int* i)
 
         //printf("_%d_", get_cur_lexem(*i, NULL).kind);
         //printf("(%d)\n", *i);
-
         struct lexem_t lexem = get_cur_lexem(*i, NULL);
         if (lexem.kind != NUM && lexem.kind != BRACE && lexem.kind != VARIABLE)
         {
-            printf("{%d}", *i);
+            //printf("{%d}", *i);
             printf("Expected expression");
             exit(5);
         }
@@ -231,13 +258,13 @@ struct node_t* Mult(int* i)
     struct node_t* mult_left = Term(i);
 /*    if (*i >= get_cur_size(NULL) - 1)
         return mult_left;*/
-    if (is_stop(*i))
-        return mult_left;
+/*    if (is_stop(*i))
+        return mult_left;*/
 
     while (is_mul_div(*i) && get_cur_lexem(*i, NULL).kind == OP) {
 
-        if (is_stop(*i))
-            return mult_left;
+/*        if (is_stop(*i))
+            return mult_left;*/
 
         node = Create_Node();
         node->lexem = get_cur_lexem(*i, NULL);
@@ -275,9 +302,9 @@ struct node_t* Term (int* i)
         (*i)++;
         return node;
     }
-
     if(is_brace(*i) == LBRAC)
     {
+        fprintf(stderr, "{%d}", *i);
         (*i)++;
         if (is_brace(*i) == RBRAC)
         {
@@ -288,7 +315,7 @@ struct node_t* Term (int* i)
         if (is_brace(*i) != RBRAC)
         {
             printf("Extra brace");
-            exit(6);
+            exit(228);
         }
         (*i)++;
 
@@ -360,6 +387,12 @@ void print_node (struct lexem_t lex) {
                     printf("END_COMMAND ");
                     break;
             }
+            break;
+        case SENTENSE:
+            printf ("SENTENSE #%d ", lex.lex.num);
+            break;
+        case VOID:
+            printf ("VOID");
             break;
         default:
             exit(2);

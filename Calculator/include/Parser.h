@@ -16,6 +16,7 @@ struct node_t
     struct node_t* left;
 };
 
+struct node_t* Sentense(int* i);
 struct node_t* Comm(int* i);
 struct node_t* Expr(int* i);
 struct node_t* Mult(int* i);
@@ -31,7 +32,7 @@ void free_all(struct lex_array_t larr);
 void print_node (struct lexem_t lex);
 void print_tree (struct node_t* top);
 
-//comm ::= comm {input, print} comm | comm
+//comm ::= comm {input, print, assign} comm | comm
 //expr ::= mult {+, -} expr | mult
 //mult ::= term {*, /} mult | term
-//term ::= ( expr ) | number
+//term ::= ( expr ) | number | variable
