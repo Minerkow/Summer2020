@@ -86,6 +86,31 @@ static bool is_print_assign(int i){
             get_cur_lexem(i, NULL).lex.com == ASSIGN));
 }
 
+void RunProgramm(){
+    //FILE* f = fopen("/home/bibi/CLionProject/Vladimirov/Calculator/test.expr", "r");
+    //assert(f);
+    int res = 0;
+    struct lex_array_t larr = {};
+    char inp[MAXLEN] = {0};
+
+    res = scanf( "%1023c", inp);
+    assert(res == 1);
+
+    larr = lex_string(inp);
+
+    if (larr.lexems == NULL) {
+        fprintf(stderr, "Larr ERROR, line - %d", __LINE__);
+        exit(1);
+    }
+    //dump_lexarray(larr);
+    //printf("\n");
+    struct node_t* top = BuildTree(larr);
+    //print_tree(top);
+    Calculation(top);
+    free_tree(top);
+    free_all(larr);
+}
+
 struct node_t* BuildTree (struct lex_array_t larr)
 {
     int i = 0;
@@ -94,35 +119,38 @@ struct node_t* BuildTree (struct lex_array_t larr)
     struct node_t* top = Sentense(&i);
     if (top == NULL)
     {
-        printf ("Empty input");
+        fprintf (stderr, "Empty input, line - %d", __LINE__);
         exit(1);
     }
     return top;
 }
 
-int calc_result(struct node_t *top)
-{
+int Calculation(struct node_t* top){
     int l = 0;
     int r = 0;
+    if (top == NULL)
+        return 0;
+    if (top->lexem.kind == VOID)
+        return 0;
     if (top->lexem.kind == COMMAND && top->lexem.lex.com == PRINT)
     {
-        printf("%d\n", calc_result(top->left));
+        printf("%d\n", Calculation(top->left));
         return 0;
     }
-    if (top->lexem.kind == COMMAND && top->lexem.lex.com == ASSIGN)
-    {
-        if (top->left == NULL || top->right == NULL)
-        {
-            printf("ASSIGN Error");
-            exit(103);
-        }
+    if (top->lexem.kind == COMMAND && top->lexem.lex.com == ASSIGN){
         if (top->left->lexem.kind != VARIABLE)
         {
-            printf("ASSIGN Error");
-            exit(104);
+            fprintf(stderr, "Assign ERROR, line - %d", __LINE__);
+            exit(1);
         }
-        int value = calc_result(top->right);
-        variable_value(top->left->lexem.lex.num, value, true, NULL);
+        r = Calculation(top->right);
+        variable_value(top->left->lexem.lex.num, r, true, NULL);
+        return 0;
+    }
+    if (top->lexem.kind == SENTENSE)
+    {
+        Calculation(top->left);
+        Calculation(top->right);
         return 0;
     }
     switch (top->lexem.kind)
@@ -135,19 +163,19 @@ int calc_result(struct node_t *top)
             if (top->lexem.lex.com == INPUT)
             {
                 int input = 0;
-                //fseek(stdin, 0, SEEK_END);
-                scanf("%d", &input);
+                fscanf(stdin,"%d", &input);
                 return input;
             }
             break;
         default:;
     }
-    l = calc_result(top->left);
-    r = calc_result(top->right);
-    return calc(l, r, top);
+    l = Calculation(top->left);
+    r = Calculation(top->right);
+    return Calc(l, r, top);
 }
 
-int calc (int l, int r, struct node_t *top)
+
+int Calc (int l, int r, struct node_t *top)
 {
     switch (top->lexem.kind) {
         case OP:
@@ -161,12 +189,15 @@ int calc (int l, int r, struct node_t *top)
                 case DIV:
                     return l / r;
                 default:
-                    printf("Error operation");
+                    fprintf(stderr, "Error operation, line - %d", __LINE__);
                     exit(101);
             }
         default:
-            printf("Error");
-            exit(102);
+            printf("\n");
+            print_node(top->lexem);
+            printf("\n");
+            fprintf(stderr, "Unknown operation, line - %d", __LINE__);
+            exit(1);
     }
 }
 
@@ -240,8 +271,8 @@ struct node_t* Expr(int* i)
         if (lexem.kind != NUM && lexem.kind != BRACE && lexem.kind != VARIABLE)
         {
             //printf("{%d}", *i);
-            printf("Expected expression");
-            exit(5);
+            fprintf(stderr, "Expected expression, line - %d", __LINE__);
+            exit(1);
         }
         node->left = expr_left;
         node->right = Mult(i);
@@ -276,8 +307,8 @@ struct node_t* Mult(int* i)
         struct lexem_t lexem = get_cur_lexem(*i, NULL);
         if (lexem.kind != NUM && lexem.kind != BRACE && lexem.kind != VARIABLE)
         {
-            printf("Expected expression");
-            exit(5);
+            fprintf(stderr,"Expected expression, line - %d", __LINE__);
+            exit(1);
         }
         node->left = mult_left;
         node->right = Term(i);
@@ -296,26 +327,26 @@ struct node_t* Term (int* i)
         node->lexem = get_cur_lexem(*i, NULL);
         if (get_cur_lexem(*i + 1, NULL).kind == NUM)
         {
-            printf("Two numbers in a row");
-            exit(9);
+            fprintf(stderr, "Two numbers in a row, line - %d", __LINE__);
+            exit(1);
         }
         (*i)++;
         return node;
     }
     if(is_brace(*i) == LBRAC)
     {
-        fprintf(stderr, "{%d}", *i);
+        //fprintf(stderr, "{%d}", *i);
         (*i)++;
         if (is_brace(*i) == RBRAC)
         {
-            printf("Extra brace");
-            exit(5);
+            fprintf(stderr, "Extra brace, line - %d", __LINE__);
+            exit(1);
         }
         node = Expr(i);
         if (is_brace(*i) != RBRAC)
         {
-            printf("Extra brace");
-            exit(228);
+            fprintf(stderr, "Extra brace, line - %d", __LINE__);
+            exit(1);
         }
         (*i)++;
 
@@ -401,7 +432,7 @@ void print_node (struct lexem_t lex) {
 
 void print_tree (struct node_t* top) {
     if (top == NULL){
-        printf ("Error: top is NULL\n");
+        fprintf (stderr, "Error: top is NULL, line - %d\n", __LINE__);
         return;
     }
     if (top->left == NULL && top->right == NULL)

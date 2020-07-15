@@ -9,6 +9,8 @@
 
 #include "Lexer.h"
 
+enum { MAXLEN = 1024 };
+
 struct node_t
 {
     struct lexem_t lexem;
@@ -22,8 +24,10 @@ struct node_t* Expr(int* i);
 struct node_t* Mult(int* i);
 struct node_t* Term(int* i);
 struct node_t* Create_Node();
-int calc_result(struct node_t *top);
-int calc (int l, int r, struct node_t *top);
+//int calc_result(struct node_t *top);
+void RunProgramm();
+int Calculation(struct node_t* top);
+int Calc (int l, int r, struct node_t *top);
 struct node_t* BuildTree (struct lex_array_t larr);
 void free_tree(struct node_t *t);
 //void Analyzer (struct lex_array_t larr);
