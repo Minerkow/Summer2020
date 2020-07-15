@@ -1,7 +1,7 @@
 
-#include "../include/Parser.h"
-#include "../include/HashTable.h"
-#include "../include/Lexer.h"
+#include "Parser.h"
+#include "HashTable.h"
+#include "Lexer.h"
 
 static struct lexem_t get_cur_lexem (int i, struct lex_array_t* ptr);
 static int get_cur_size(struct lex_array_t* ptr);

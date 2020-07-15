@@ -1,5 +1,5 @@
-#include "../include/HashTable.h"
-#include "../include/Lexer.h"
+#include "HashTable.h"
+#include "Lexer.h"
 
 static void swap_lexems(struct lex_array_t* larr, int index1, int index2)
 {
