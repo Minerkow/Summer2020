@@ -86,14 +86,14 @@ static bool is_print_assign(int i){
             get_cur_lexem(i, NULL).lex.com == ASSIGN));
 }
 
-void RunProgramm(){
-    //FILE* f = fopen("/home/bibi/CLionProject/Vladimirov/Calculator/test.expr", "r");
-    //assert(f);
+void RunProgramm(int argc, char** argv){
+    FILE* f = fopen(argv[1], "r");
+    assert(f);
     int res = 0;
     struct lex_array_t larr = {};
     char inp[MAXLEN] = {0};
 
-    res = scanf( "%1023c", inp);
+    res = fscanf( f,  "%1023c", inp);
     assert(res == 1);
 
     larr = lex_string(inp);
