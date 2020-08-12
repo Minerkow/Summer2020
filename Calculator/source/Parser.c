@@ -1,4 +1,5 @@
 
+#include <stdio.h>
 #include "Parser.h"
 #include "HashTable.h"
 #include "Lexer.h"
@@ -80,14 +81,46 @@ static bool is_num_input_variable(int i)
     return res;
 }
 
+static bool is_if(int i)
+{
+    struct lexem_t lexem = get_cur_lexem(i, NULL);
+    return (lexem.kind == COMMAND && lexem.lex.com == IF);
+}
+
+static bool is_while(int i)
+{
+    struct lexem_t lexem = get_cur_lexem(i, NULL);
+    return (lexem.kind == COMMAND && lexem.lex.com == WHILE);
+}
+
+static bool is_comparison(int i)
+{
+    return (get_cur_lexem(i, NULL).kind == COMPAR_SIGNS);
+}
+
+static enum braces_t is_figur_brace(int i)
+{
+    struct lexem_t lexem = get_cur_lexem(i, NULL);
+    if (lexem.kind != BRACE)
+        return false;
+    switch (lexem.lex.b) {
+        case LFIGURBRAC: return LFIGURBRAC;
+        case RFIGURBRAC: return RFIGURBRAC;
+        default:;
+    }
+    return false;
+}
+
 static bool is_print_assign(int i){
     return (get_cur_lexem(i, NULL).kind == COMMAND &&
             (get_cur_lexem(i, NULL).lex.com == PRINT ||
             get_cur_lexem(i, NULL).lex.com == ASSIGN));
-}
+}    //dump_lexarray(larr);
+    //printf("\n");
 
 void RunProgramm(int argc, char** argv){
     FILE* f = fopen(argv[1], "r");
+   //FILE* f =  fopen("/home/bibi/CLionProject/Vladimirov/Calculator/test.expr", "r");
     assert(f);
     int res = 0;
     struct lex_array_t larr = {};
@@ -100,12 +133,13 @@ void RunProgramm(int argc, char** argv){
 
     if (larr.lexems == NULL) {
         fprintf(stderr, "Larr ERROR, line - %d", __LINE__);
-        exit(1);
+        exit(ERROR);
     }
     //dump_lexarray(larr);
     //printf("\n");
     struct node_t* top = BuildTree(larr);
     //print_tree(top);
+    //printf("\n");
     Calculation(top);
     free_tree(top);
     free_all(larr);
@@ -120,7 +154,7 @@ struct node_t* BuildTree (struct lex_array_t larr)
     if (top == NULL)
     {
         fprintf (stderr, "Empty input, line - %d", __LINE__);
-        exit(1);
+        exit(ERROR);
     }
     return top;
 }
@@ -132,20 +166,57 @@ int Calculation(struct node_t* top){
         return 0;
     if (top->lexem.kind == VOID)
         return 0;
-    if (top->lexem.kind == COMMAND && top->lexem.lex.com == PRINT)
-    {
-        printf("%d\n", Calculation(top->left));
-        return 0;
-    }
-    if (top->lexem.kind == COMMAND && top->lexem.lex.com == ASSIGN){
-        if (top->left->lexem.kind != VARIABLE)
-        {
-            fprintf(stderr, "Assign ERROR, line - %d", __LINE__);
-            exit(1);
+    if (top->lexem.kind == COMMAND) {
+        switch (top->lexem.lex.com) {
+            case PRINT:
+                printf("%d\n", Calculation(top->left));
+                return 0;
+            case ASSIGN:
+                if (top->left->lexem.kind != VARIABLE)
+                {
+                    fprintf(stderr, "Assign ERROR, line - %d", __LINE__);
+                    exit(ERROR);
+                }
+                r = Calculation(top->right);
+                variable_value(top->left->lexem.lex.num, r, true, NULL);
+                return 0;
+            case IF:
+                l = Calculation(top->left);
+                if (l == true)
+                    Calculation(top->right);
+                return 0;
+            case WHILE:
+                l = Calculation(top->left);
+                while (l == true) {
+                    Calculation(top->right);
+                    l = Calculation(top->left);
+                }
+                return 0;
+            case INPUT:
+                fscanf(stdin, "%d", &l);
+                return l;
+            default: {
+                fprintf(stderr, "Unknown command, line - %d", __LINE__);
+                exit(ERROR);
+                }
         }
+    }
+    if (top->lexem.kind == COMPAR_SIGNS) {
         r = Calculation(top->right);
-        variable_value(top->left->lexem.lex.num, r, true, NULL);
-        return 0;
+        l = Calculation(top->left);
+        switch (top->lexem.lex.cs) {
+            case EQUAL: return (l == r);
+            case NOT_EQUAL: return (l != r);
+            case GREATER: return (l > r);
+            case LESS: return (l < r);
+            case EQ_OR_GR: return (l >= r);
+            case EQ_OR_LESS: return (l <= r);
+            case NOT: return (!l);
+            default: {
+                fprintf(stderr, "Unknown compar signs");
+                exit(ERROR);
+            }
+        }
     }
     if (top->lexem.kind == SENTENSE)
     {
@@ -159,14 +230,6 @@ int Calculation(struct node_t* top){
             return variable_value(top->lexem.lex.num, 0, false, NULL);
         case NUM:
             return top->lexem.lex.num;
-        case COMMAND:
-            if (top->lexem.lex.com == INPUT)
-            {
-                int input = 0;
-                fscanf(stdin,"%d", &input);
-                return input;
-            }
-            break;
         default:;
     }
     l = Calculation(top->left);
@@ -187,17 +250,21 @@ int Calc (int l, int r, struct node_t *top)
                 case MUL:
                     return l * r;
                 case DIV:
+                    if (r == 0){
+                        fprintf(stderr, "Division by zero, line - %d", __LINE__);
+                        exit(ERROR);
+                    }
                     return l / r;
                 default:
                     fprintf(stderr, "Error operation, line - %d", __LINE__);
-                    exit(101);
+                    exit(ERROR);
             }
         default:
             printf("\n");
             print_node(top->lexem);
             printf("\n");
             fprintf(stderr, "Unknown operation, line - %d", __LINE__);
-            exit(1);
+            exit(ERROR);
     }
 }
 
@@ -205,16 +272,16 @@ struct node_t* Sentense(int* i){
     struct node_t* node = Create_Node();
     struct node_t* top = node;
     int num = 0;
-    while((*i) <= get_cur_size(NULL) - 1)
+    while((*i) <= get_cur_size(NULL) - 1 && is_figur_brace(*i) != RFIGURBRAC)
     {
         node->lexem.kind = SENTENSE;
         node->lexem.lex.num = num;
         num++;
         node->left = Comm(i);
-        if(!is_stop(*i))
+        if(!is_stop(*i) && is_figur_brace(*i) != RFIGURBRAC)
         {
             fprintf(stderr, "\nExpected ';' : line - %d, i - %d", __LINE__, *i);
-            exit(0);
+            exit(ERROR);
         }
         (*i)++;
         node->right = Create_Node();
@@ -226,7 +293,7 @@ struct node_t* Sentense(int* i){
 
 struct node_t* Comm(int* i) {
     struct node_t *node = NULL;
-    struct node_t *comm_left = Expr(i);
+    struct node_t *comm_left = Comp(i);
     //printf("_%d_", *i);
     if (is_stop(*i))
         return comm_left;
@@ -234,7 +301,7 @@ struct node_t* Comm(int* i) {
     node->lexem = get_cur_lexem(*i, NULL);
     if (is_print(*i)){
         (*i)++;
-       node->left = Expr(i);
+       node->left = Comp(i);
        node->right = Create_Node();
        node->right->lexem.kind = VOID;
     }
@@ -242,11 +309,55 @@ struct node_t* Comm(int* i) {
         (*i)++;
        node->left = comm_left;
         //printf("_%d_", *i);
-        node->right = Expr(i);
+        node->right = Comp(i);
         //printf("_%d_", *i);
     }
+    if (is_if(*i) || is_while(*i)) {
+        (*i)++;
+        node->left = Comp(i);
+        if (is_figur_brace(*i) != LFIGURBRAC) {
+            fprintf(stderr, "Waiting figure brace - '{', line - %d, i - %d", __LINE__, *i);
+            exit(ERROR);
+        }
+        (*i)++;
+        node->right = Sentense(i);
+        if (is_figur_brace(*i) != RFIGURBRAC) {
+            fprintf(stderr, "Waiting figure brace - '}'");
+            exit(ERROR);
+        }
+    }
+
+
     comm_left = node;
     return comm_left;
+}
+
+struct node_t* Comp(int *i)
+{
+    struct node_t* node = NULL;
+
+    struct node_t* comp_left = Expr(i);
+    if (is_stop(*i))
+        return comp_left;
+    while (is_comparison(*i))
+    {
+        if (is_stop(*i))
+            return comp_left;
+        node = Create_Node();
+        node->lexem = get_cur_lexem(*i, NULL);
+        if (node->lexem.lex.cs == NOT) {
+            (*i)++;
+            node->left = Expr(i);
+            node->right = NULL;
+            comp_left = node;
+        } else {
+            (*i)++;
+            node->left = comp_left;
+            node->right = Expr(i);
+            comp_left = node;
+        }
+    }
+    return comp_left;
 }
 
 struct node_t* Expr(int* i)
@@ -272,7 +383,7 @@ struct node_t* Expr(int* i)
         {
             //printf("{%d}", *i);
             fprintf(stderr, "Expected expression, line - %d", __LINE__);
-            exit(1);
+            exit(ERROR);
         }
         node->left = expr_left;
         node->right = Mult(i);
@@ -308,7 +419,7 @@ struct node_t* Mult(int* i)
         if (lexem.kind != NUM && lexem.kind != BRACE && lexem.kind != VARIABLE)
         {
             fprintf(stderr,"Expected expression, line - %d", __LINE__);
-            exit(1);
+            exit(ERROR);
         }
         node->left = mult_left;
         node->right = Term(i);
@@ -328,7 +439,7 @@ struct node_t* Term (int* i)
         if (get_cur_lexem(*i + 1, NULL).kind == NUM)
         {
             fprintf(stderr, "Two numbers in a row, line - %d", __LINE__);
-            exit(1);
+            exit(ERROR);
         }
         (*i)++;
         return node;
@@ -340,13 +451,13 @@ struct node_t* Term (int* i)
         if (is_brace(*i) == RBRAC)
         {
             fprintf(stderr, "Extra brace, line - %d", __LINE__);
-            exit(1);
+            exit(ERROR);
         }
-        node = Expr(i);
+        node = Comp(i);
         if (is_brace(*i) != RBRAC)
         {
-            fprintf(stderr, "Extra brace, line - %d", __LINE__);
-            exit(1);
+            fprintf(stderr, "Extra brace, line - %d, i = %d", __LINE__, *i);
+            exit(ERROR);
         }
         (*i)++;
 
@@ -393,8 +504,10 @@ void print_node (struct lexem_t lex) {
                 case DIV:
                     printf ("DIV ");
                     break;
-                default:
-                    exit(1);
+                default: {
+                    fprintf(stderr, "Unknown operation");
+                    exit(ERROR);
+                }
             }
             break;
         case NUM:
@@ -417,6 +530,16 @@ void print_node (struct lexem_t lex) {
                 case END_COMMAND:
                     printf("END_COMMAND ");
                     break;
+                case IF:
+                    printf("IF ");
+                    break;
+                case WHILE:
+                    printf("WHILE ");
+                    break;
+                default: {
+                    fprintf(stderr, "Unknown command");
+                    exit(ERROR);
+                }
             }
             break;
         case SENTENSE:
@@ -425,8 +548,23 @@ void print_node (struct lexem_t lex) {
         case VOID:
             printf ("VOID");
             break;
+        case COMPAR_SIGNS:
+            switch (lex.lex.cs) {
+                case NOT: printf("NOT "); break;
+                case EQUAL: printf("EQUAL "); break;
+                case NOT_EQUAL: printf("NOT_EQUAL "); break;
+                case GREATER: printf("GREATER "); break;
+                case LESS: printf("LESS "); break;
+                case EQ_OR_GR: printf("EQ_OR_GR "); break;
+                case EQ_OR_LESS: printf("EQ_OR_LESS"); break;
+                default: {
+                    fprintf(stderr, "Unknown compar sings");
+                    exit(ERROR);
+                }
+            }
+            break;
         default:
-            exit(2);
+            assert(0 && "ERROR READ");
     }
 }
 

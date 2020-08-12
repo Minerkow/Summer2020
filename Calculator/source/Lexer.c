@@ -8,6 +8,14 @@ static void swap_lexems(struct lex_array_t* larr, int index1, int index2)
     larr->lexems[index2] = copy;
 }
 
+bool iscomparsigns(const char* str, int i) {
+    if (str[i] == '!' || str[i] == '>' || str[i] == '<')
+        return true;
+    if (str[i] == '=' && str[i + 1] == '=')
+        return true;
+    return false;
+}
+
 struct lex_array_t lex_string(const char *str) {
     assert(str != NULL);
 
@@ -79,6 +87,48 @@ struct lex_array_t lex_string(const char *str) {
             continue;
         }
 
+        if (iscomparsigns(str, i))
+        {
+            larr.lexems[larr.size].kind = COMPAR_SIGNS;
+            switch (str[i])
+            {
+                case '>':
+                    if (str[i + 1] == '=') {
+                        larr.lexems[larr.size].lex.cs = EQ_OR_GR;
+                        i++;
+                        break;
+                    }
+                    larr.lexems[larr.size].lex.cs = GREATER;
+                    break;
+                case '<':
+                    if (str[i + 1] == '=') {
+                        larr.lexems[larr.size].lex.cs = EQ_OR_LESS;
+                        i++;
+                        break;
+                    }
+                    larr.lexems[larr.size].lex.cs = LESS;
+                    break;
+                case '=':
+                    if (str[i + 1] == '=') {
+                        larr.lexems[larr.size].lex.cs = EQUAL;
+                        i++;
+                    }
+                    break;
+                case '!':
+                    if (str[i + 1] == '=') {
+                        larr.lexems[larr.size].lex.cs = NOT_EQUAL;
+                        i++;
+                        break;
+                    }
+                    larr.lexems[larr.size].lex.cs = NOT;
+                    break;
+                default: assert(0 && "READ ERROR");
+            }
+            larr.size++;
+            i++;
+            continue;
+        }
+
         //Read Brace
 
         if (str[i] == '(' || str[i] == ')')
@@ -100,7 +150,26 @@ struct lex_array_t lex_string(const char *str) {
             continue;
         }
 
+        if (str[i] == '{' || str[i] == '}')
+        {
+            larr.lexems[larr.size].kind = BRACE;
+            switch (str[i])
+            {
+                case '{':
+                    larr.lexems[larr.size].lex.b = LFIGURBRAC;
+                    break;
+                case '}':
+                    larr.lexems[larr.size].lex.b = RFIGURBRAC;
+                    break;
+                default:;
+            }
+            larr.size++;
+            i++;
+            continue;
+        }
+
         //Read Variables and Command
+
         if (isalpha(str[i]))
         {
             int numsymbol = 0;
@@ -113,12 +182,13 @@ struct lex_array_t lex_string(const char *str) {
                 if (numsymbol == MAXLENWORD - 1)
                 {
                     printf("Easy, too many letters in your variable");
-                    exit(31);
+                    exit(ERROR);
                 }
                 word[numsymbol] = str[i];
                 numsymbol++;
                 i++;
             }
+
             if (!strcmp(word, "print"))
             {
                 larr.lexems[larr.size].kind = COMMAND;
@@ -126,6 +196,24 @@ struct lex_array_t lex_string(const char *str) {
                 larr.size++;
                 continue;
             }
+
+            if (!strcmp(word, "if"))
+            {
+                larr.lexems[larr.size].kind = COMMAND;
+                larr.lexems[larr.size].lex.com = IF;
+                larr.size++;
+                if (larr.size)
+                continue;
+            }
+
+            if (!strcmp(word, "while"))
+            {
+                larr.lexems[larr.size].kind = COMMAND;
+                larr.lexems[larr.size].lex.com = WHILE;
+                larr.size++;
+                continue;
+            }
+
             larr.lexems[larr.size].lex.num = check_hash_table(hash_table, hash, word);
             larr.size++;
             continue;
@@ -180,6 +268,8 @@ print_brace(enum braces_t bracetype){
     switch(bracetype) {
         case LBRAC: printf(" LBRAC"); break;
         case RBRAC: printf(" RBRAC"); break;
+        case RFIGURBRAC: printf (" RFIGURBRAC"); break;
+        case LFIGURBRAC: printf (" LFIGURBRAC"); break;
         default: assert(0 && "unknown bracket");
     }
 }
@@ -198,11 +288,27 @@ print_variable(int n){
 void
 print_command(enum command_t command){
     switch(command){
+        case IF: printf(" IF"); break;
+        case WHILE: printf(" WHILE"); break;
         case INPUT: printf(" INPUT"); break;
         case PRINT: printf(" PRINT"); break;
         case ASSIGN: printf(" ASSIGN"); break;
         case END_COMMAND: printf(" END_COMMAND\n"); break;
         default: assert(0 && "unknown command");
+    }
+}
+
+void
+print_compar_signs(enum compar_signs_t cs){
+    switch (cs) {
+        case NOT: printf(" NOT"); break;
+        case EQUAL: printf(" EQUAL"); break;
+        case NOT_EQUAL: printf(" NOT_EQUAL"); break;
+        case GREATER: printf (" GREATER"); break;
+        case LESS: printf (" LESS"); break;
+        case EQ_OR_LESS: printf (" EQ_OR_LESS"); break;
+        case EQ_OR_GR: printf (" EQ_OR_GR"); break;
+        default: assert(0 && "unknown compar signs");
     }
 }
 
@@ -214,6 +320,7 @@ print_lexem(struct lexem_t lxm) {
         case NUM: print_num(lxm.lex.num); break;
         case VARIABLE: print_variable(lxm.lex.num); break;
         case COMMAND: print_command(lxm.lex.com); break;
+        case COMPAR_SIGNS: print_compar_signs(lxm.lex.cs); break;
         default: assert(0 && "unknown lexem");
     }
 }

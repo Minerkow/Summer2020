@@ -2,25 +2,25 @@
 
 #include <assert.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <stdbool.h>
-#include <string.h>
-#include <ctype.h>
 #include <values.h>
+#include <ctype.h>
 
 // lexem is operation | brace | number
-enum lexem_kind_t {  OP , BRACE, NUM ,  VARIABLE, COMMAND, SENTENSE, VOID};
+enum lexem_kind_t { POISON1, OP , BRACE,  NUM ,  VARIABLE, COMMAND, SENTENSE, VOID, COMPAR_SIGNS};
 
 // operation is: +, -, *, /
-enum operation_t { ADD, SUB, MUL, DIV };
+enum operation_t { POISON2, ADD, SUB, MUL, DIV };
 
 // braces are: (, )
-enum braces_t {  LBRAC , RBRAC };
+enum braces_t { POISON3 ,LBRAC , RBRAC, LFIGURBRAC, RFIGURBRAC };
 
 //command is: print, ?, =, ;
-enum command_t { PRINT, INPUT, ASSIGN, END_COMMAND};
+enum command_t { POISON4, PRINT, INPUT, ASSIGN, END_COMMAND, IF, WHILE };
 
-enum {POISON = MAXINT};
+enum compar_signs_t {  POISON5, NOT, EQUAL, NOT_EQUAL, GREATER, LESS, EQ_OR_GR, EQ_OR_LESS};
+
+enum {POISON = MAXINT, ERROR = 1};
 
 // lexem is one of lexem kind entities
 // if (l.kind == BRACE)
@@ -31,6 +31,7 @@ struct lexem_t {
         enum operation_t op;
         enum braces_t b;
         enum command_t com;
+        enum compar_signs_t cs;
         int num;
     } lex;
 };
@@ -53,3 +54,5 @@ struct lex_array_t lex_string(const char *str);
 
 // printinvoid print_lexem(struct lexem_t lxm);
 void dump_lexarray(struct lex_array_t pl);
+
+bool iscomparsigns(const char* str, int i);

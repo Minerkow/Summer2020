@@ -1,11 +1,17 @@
 #pragma once
 
+//sent ::= comm {;} sent | comm
+//comm ::= comp {input, print, assign, if, while} comm | comp
+//comp ::= expr { ==, <=, >=, !, !=, >, <} comp | expr
+//expr ::= mult {+, -} expr | mult
+//mult ::= term {*, /} mult | term
+//term ::= ( expr ) | number | variable
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#include <ctype.h>
 
 #include "Lexer.h"
 
@@ -20,6 +26,7 @@ struct node_t
 
 struct node_t* Sentense(int* i);
 struct node_t* Comm(int* i);
+struct node_t* Comp(int* i);
 struct node_t* Expr(int* i);
 struct node_t* Mult(int* i);
 struct node_t* Term(int* i);
@@ -32,11 +39,8 @@ struct node_t* BuildTree (struct lex_array_t larr);
 void free_tree(struct node_t *t);
 //void Analyzer (struct lex_array_t larr);
 void free_all(struct lex_array_t larr);
-
 void print_node (struct lexem_t lex);
 void print_tree (struct node_t* top);
 
-//comm ::= comm {input, print, assign} comm | comm
-//expr ::= mult {+, -} expr | mult
-//mult ::= term {*, /} mult | term
-//term ::= ( expr ) | number | variable
+
+
