@@ -4,6 +4,7 @@
 
 struct variable_t {
     int value;
+    char* name;
 };
 
 struct var_arr_t {

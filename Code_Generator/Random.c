@@ -3,6 +3,7 @@
 #include "Lexem.h"
 #include <assert.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 struct tree_t* GenerateRandomTree(size_t numSent) {
     struct tree_t* tree = calloc(1, sizeof(tree));
@@ -13,14 +14,18 @@ struct tree_t* GenerateRandomTree(size_t numSent) {
 }
 
 void FillSent(struct tree_t* tree) {
-    struct node_t* temp = NULL;
-    for (int i = 0; i < tree->numSent; ++i) {
-        temp = CreateNode();
-        temp->lexem.kind = SENTENSE;
-        temp->lexem.lex.num = i;
-        if (i == 0)
-            tree->top = temp;
+    struct node_t* temp = CreateNode();
+    tree->top = temp;
+    temp->lexem.kind = SENTENSE;
+    temp->lexem.lex.num = 0;
+    for (int i = 1; i < tree->numSent; ++i) {
+        temp->right = CreateNode();
+        temp->right->lexem.kind = SENTENSE;
+        temp->right->lexem.lex.num = i;
+        temp = temp->right;
     }
+    temp->right = CreateNode();
+    temp->right->lexem.kind = VOID;
 }
 
 void FillNode(struct tree_t* tree) {
@@ -33,11 +38,11 @@ void FillNode(struct tree_t* tree) {
         node = temp->left;
         switch (node->lexem.lex.com) {
             case PRINT:
-                node->left = RandomExpr();
+                node->left = RandomExpr(CAN_USE_ALL_VAR);
                 break;
             case ASSIGN:
-                node->left = RandomVariable();
-                node->right = RandomExpr();
+                node->left = RandomVariable(false, true);
+                node->right = RandomExpr(node->left->lexem.lex.num);
                 break;
             case IF:
                 node->left = RandomBoolExpr();
@@ -60,7 +65,7 @@ int* RandomIntArray(size_t numNode) {
     for (int i = 0; i < numNode; ++i) {
         res[i] = rand() % DIFF_VAL_NODE;
     }
-    PrintArr(res, numNode);
+    //PrintArr(res, numNode);
     return res;
 }
 
@@ -76,32 +81,34 @@ enum command_t RandomCommand() {
     return PRINT;
 }
 
-struct node_t* RandomExpr() {
-    int exprSize = rand() % MAX_EXPR_SIZE;
+struct node_t* RandomExpr(int withoutVarable) {
+    int exprSize = rand() % MAX_EXPR_SIZE + 1;
     int* arr = RandomIntArray(exprSize);
     struct tree_t* exprTree = CreateSearchTreeByArray(arr, exprSize);
-    GenerateArithmOperations(exprTree->top);
+    assert(exprTree->top);
+    GenerateArithmOperations(exprTree->top, withoutVarable);
     return exprTree->top;
 }
 
-void GenerateArithmOperations(struct node_t* top) {
+void GenerateArithmOperations(struct node_t* top, int withoutVariable) {
+    assert(top);
     if (top->left == NULL && top->right == NULL) {
         return;
     }
     top->lexem.kind = OP;
     top->lexem.lex.op = RandomOperation();
     if (top->left == NULL && top->right != NULL) {
-        top->left = RandomVariable();
-        if (top->left == NULL)
+        top->left = RandomVariable(false, false);
+        if (top->left == NULL || top->left->lexem.lex.num == withoutVariable)
             top->left = RandomNum();
     }
     if (top->right == NULL && top->left != NULL) {
-        top->right = RandomVariable();
-        if (top->right == NULL)
+        top->right = RandomVariable(false, false);
+        if (top->right == NULL || top->right->lexem.lex.num == withoutVariable)
             top->right = RandomNum();
     }
-    GenerateArithmOperations(top->left);
-    GenerateArithmOperations(top->right);
+    GenerateArithmOperations(top->left, withoutVariable);
+    GenerateArithmOperations(top->right, withoutVariable);
 }
 
 enum operation_t RandomOperation() {
@@ -128,20 +135,29 @@ struct node_t* RandomVariable(bool delete, bool add) {
     if (add == true)
         var->lexem.lex.num = AddVar(varArr);
     if (add == false) {
-        if (varArr == 0)
+        if (varArr->size == 0)
             return NULL;
         var->lexem.lex.num = rand() % varArr->size;
     }
+    return var;
 }
 
 struct node_t* RandomSent() {
-    //TODO:: RandomSent
-    
-
+    int rnd = rand() % MAX_LEN_FUNC_BODY + 1;
+    struct tree_t* tree = GenerateRandomTree(rnd);
+    struct node_t* temp = tree->top;
+    free(tree);
+    return temp;
 }
 
 struct node_t* RandomBoolExpr() {
     //TODO:: RandomBoolExpr
+    struct node_t* node = CreateNode();
+    node->lexem.kind = COMPAR_SIGNS;
+    node->lexem.lex.cs = rand() % COMP_SIGN_NUM + EQUAL;
+    node->left = RandomExpr(CAN_USE_ALL_VAR);
+    node->right = RandomExpr(CAN_USE_ALL_VAR);
+    return node;
 }
 
 struct node_t* RandomNum() {

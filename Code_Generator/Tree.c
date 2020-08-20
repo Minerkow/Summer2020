@@ -1,6 +1,5 @@
 #include "Tree.h"
 #include "Lexem.h"
-#include "HashTable.h"
 #include <assert.h>
 #include <stdio.h>
 
@@ -8,7 +7,9 @@ struct tree_t* CreateSearchTreeByArray(int* arr, size_t len) {
     struct tree_t* tree = calloc(1, sizeof(tree));
     for (int i = 0; i < len; ++i) {
         InsertNode(tree, arr[i]);
+        //assert(tree->top);
     }
+    //assert(tree->top);
     return tree;
 }
 
@@ -20,6 +21,7 @@ void InsertNode(struct tree_t* tree, int value) {
         tree->top = node;
         return;
     }
+    assert(tree->top);
     struct node_t* temp = tree->top;
     struct node_t* parent = tree->top;
     while (temp != NULL) {
