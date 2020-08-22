@@ -99,13 +99,17 @@ void GenerateArithmOperations(struct node_t* top, int withoutVariable) {
     top->lexem.lex.op = RandomOperation();
     if (top->left == NULL && top->right != NULL) {
         top->left = RandomVariable(false, false);
-        if (top->left == NULL || top->left->lexem.lex.num == withoutVariable)
+        if (top->left == NULL || top->left->lexem.lex.num == withoutVariable) {
             top->left = RandomNum();
+            assert(top->left);
+        }
     }
     if (top->right == NULL && top->left != NULL) {
         top->right = RandomVariable(false, false);
-        if (top->right == NULL || top->right->lexem.lex.num == withoutVariable)
+        if (top->right == NULL || top->right->lexem.lex.num == withoutVariable) {
             top->right = RandomNum();
+            assert(top->right);
+        }
     }
     GenerateArithmOperations(top->left, withoutVariable);
     GenerateArithmOperations(top->right, withoutVariable);
@@ -126,6 +130,7 @@ struct node_t* RandomVariable(bool delete, bool add) {
     static struct var_arr_t* varArr = NULL;
     if (varArr == NULL) {
         varArr = CreateVarArr();
+        VariableName( 0, varArr);
     }
     if (delete == DESTROY) {
         FreeVarArr(varArr);
@@ -145,7 +150,11 @@ struct node_t* RandomVariable(bool delete, bool add) {
 struct node_t* RandomSent() {
     int rnd = rand() % MAX_LEN_FUNC_BODY + 1;
     struct tree_t* tree = GenerateRandomTree(rnd);
+    assert(tree);
     struct node_t* temp = tree->top;
+/*    printf("\n");
+    PrintTree(temp);
+    printf("\n");*/
     free(tree);
     return temp;
 }

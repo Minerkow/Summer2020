@@ -1,3 +1,4 @@
+#include <assert.h>
 #include "Variable.h"
 #include "Random.h"
 
@@ -29,4 +30,14 @@ int AddVar(struct var_arr_t* varArr) {
     }
     //printf(varArr->arr[i].name);
     return i;
+}
+
+char* VariableName(int numVar, struct var_arr_t* varArr) {
+    static struct var_arr_t* vArr = NULL;
+    if (varArr != NULL) {
+        vArr = varArr;
+        return NULL;
+    }
+    assert(vArr->size >= numVar);
+    return vArr->arr[numVar].name;
 }

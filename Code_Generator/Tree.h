@@ -2,6 +2,8 @@
 
 #include "Lexem.h"
 #include <stdlib.h>
+#include <stdio.h>
+#include "Variable.h"
 
 struct tree_t {
     struct node_t* top;
@@ -29,5 +31,8 @@ void PrintArr(int* arr, size_t len);
 
 void Inorder(struct node_t* node);
 
+void TreeIntoTxt(struct tree_t* tree);
+
+void NodeIntoTxt(struct node_t* node, FILE* file);
 
 

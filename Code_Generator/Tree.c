@@ -15,6 +15,7 @@ struct tree_t* CreateSearchTreeByArray(int* arr, size_t len) {
 
 void InsertNode(struct tree_t* tree, int value) {
     struct node_t* node = CreateNode();
+    assert(node);
     node->lexem.kind = NUM;
     node->lexem.lex.num = value;
     if (tree->top == NULL) {
@@ -183,5 +184,102 @@ void Inorder(struct node_t* node){
     Inorder(node->left);
     printf ("%d ", node->lexem.lex.num);
     Inorder(node->right);
+}
+
+void TreeIntoTxt(struct tree_t* tree) {
+    FILE* RandomCode = fopen("/home/bibi/CLionProject/Vladimirov/CodeGenerator/RandomTest.cl", "w");
+    assert(RandomCode);
+    NodeIntoTxt(tree->top, RandomCode);
+    fclose(RandomCode);
+}
+
+void NodeIntoTxt(struct node_t* node, FILE* file) {
+    struct lexem_t lex = node->lexem;
+    switch (lex.kind) {
+        case NUM:
+            fprintf(file, " %d ", lex.lex.num);
+            return;
+        case VARIABLE:
+            fprintf(file, " %s ", VariableName(lex.lex.num, NULL));
+            return;
+        case SENTENSE:
+            NodeIntoTxt(node->left, file);
+            NodeIntoTxt(node->right, file);
+            break;
+        case COMMAND:
+            switch (lex.lex.com) {
+                case PRINT:
+                    fprintf(file, "print ");
+                    NodeIntoTxt(node->left, file);
+                    fprintf(file, ";\n");
+                    break;
+                case ASSIGN:
+                    NodeIntoTxt(node->left, file);
+                    fprintf(file, " = ");
+                    NodeIntoTxt(node->right, file);
+                    fprintf(file, ";\n");
+                    break;
+                case IF:
+                    fprintf(file, "if ( ");
+                    NodeIntoTxt(node->left, file);
+                    fprintf(file, " ) {\n");
+                    NodeIntoTxt(node->right, file);
+                    fprintf(file, "\n}\n");
+                    break;
+                case WHILE:
+                    fprintf(file, "while ( ");
+                    NodeIntoTxt(node->left, file);
+                    fprintf(file, " ) {\n");
+                    NodeIntoTxt(node->right, file);
+                    fprintf(file, "\n}\n");
+                    break;
+                default: assert(0 && "Oooops, ERROR");
+            }
+            break;
+        case OP:
+            switch (lex.lex.op) {
+                case ADD:
+                    fprintf(file, "( ");
+                    NodeIntoTxt(node->left, file);
+                    fprintf(file, " + ");
+                    NodeIntoTxt(node->right, file);
+                    fprintf(file, " )");
+                    return;
+                case SUB:
+                    fprintf(file, "( ");
+                    NodeIntoTxt(node->left, file);
+                    fprintf(file, " - ");
+                    NodeIntoTxt(node->right, file);
+                    fprintf(file, " )");
+                    return;
+                case MUL:
+                    NodeIntoTxt(node->left, file);
+                    fprintf(file, " * ");
+                    NodeIntoTxt(node->right, file);
+                    break;
+                case DIV:
+                    NodeIntoTxt(node->left, file);
+                    fprintf(file, " / ");
+                    NodeIntoTxt(node->right, file);
+                    break;
+                default: assert(0 && "OOOOps, ERROR");
+            }
+            break;
+        case COMPAR_SIGNS:
+            NodeIntoTxt(node->left, file);
+            switch (lex.lex.cs) {
+                case EQUAL: fprintf(file, " == "); break;
+                case NOT_EQUAL: fprintf(file, " != "); break;
+                case GREATER: fprintf(file, " > "); break;
+                case LESS: fprintf(file, " < "); break;
+                case EQ_OR_LESS: fprintf(file, " <= "); break;
+                case EQ_OR_GR: fprintf(file, " >= "); break;
+                default: assert(0 && "Oooops, ERROR");
+            }
+            NodeIntoTxt(node->right, file);
+            break;
+        case VOID: return;
+        default: assert(0 && "Ooops, ERROR");
+    }
 }
 

@@ -5,7 +5,7 @@
 #include "Lexem.h"
 #include "Variable.h"
 
-enum {DIFF_VAL_NODE = 1000, MAX_EXPR_SIZE = 20, MAX_VARIABLE = 10, MAX_LEN_VAR = 4, MAX_LEN_FUNC_BODY = 10};
+enum {DIFF_VAL_NODE = 1000, MAX_EXPR_SIZE = 10, MAX_VARIABLE = 10, MAX_LEN_VAR = 4, MAX_LEN_FUNC_BODY = 5};
 
 enum {COMMAND_NUM = 4, OP_NUM = 4, COMP_SIGN_NUM = 6, DESTROY = true, CAN_USE_ALL_VAR = -1};
 
