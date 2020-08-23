@@ -46,11 +46,11 @@ void FillNode(struct tree_t* tree) {
                 break;
             case IF:
                 node->left = RandomBoolExpr();
-                node->right = RandomSent();
+                node->right = GenerateRandomTree(rand() % MAX_LEN_FUNC_BODY)->top;
                 break;
             case WHILE:
                 node->left = RandomBoolExpr();
-                node->right = RandomSent();
+                node->right = GenerateRandomTree(rand() % MAX_LEN_FUNC_BODY)->top;
                 break;
             default:
                 assert(0 && "ERROR");
@@ -137,8 +137,11 @@ struct node_t* RandomVariable(bool delete, bool add) {
     }
     struct node_t* var = CreateNode();
     var->lexem.kind = VARIABLE;
-    if (add == true)
+    if (add == true) {
         var->lexem.lex.num = AddVar(varArr);
+        if (var->lexem.lex.num == -1)
+            var->lexem.lex.num = rand() % varArr->size;
+    }
     if (add == false) {
         if (varArr->size == 0)
             return NULL;
@@ -149,18 +152,18 @@ struct node_t* RandomVariable(bool delete, bool add) {
 
 struct node_t* RandomSent() {
     int rnd = rand() % MAX_LEN_FUNC_BODY + 1;
-    struct tree_t* tree = GenerateRandomTree(rnd);
-    assert(tree);
+    struct tree_t* tree = calloc(1, sizeof(tree));
+    tree->numSent = rnd;
+    FillSent(tree);
+    FillNode(tree);
     struct node_t* temp = tree->top;
-/*    printf("\n");
-    PrintTree(temp);
-    printf("\n");*/
     free(tree);
     return temp;
 }
 
+
+
 struct node_t* RandomBoolExpr() {
-    //TODO:: RandomBoolExpr
     struct node_t* node = CreateNode();
     node->lexem.kind = COMPAR_SIGNS;
     node->lexem.lex.cs = rand() % COMP_SIGN_NUM + EQUAL;

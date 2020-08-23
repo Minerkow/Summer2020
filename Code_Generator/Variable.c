@@ -5,6 +5,8 @@
 struct var_arr_t* CreateVarArr() {
     struct var_arr_t* varArr = calloc(1, sizeof(varArr));
     varArr->size = 0;
+    assert(MAX_VARIABLE >= 1 && "Please, choose more variables");
+    varArr->capacity = MAX_VARIABLE;
     varArr->arr = calloc(MAX_VARIABLE, sizeof(struct variable_t));
     for (int i = 0; i < MAX_VARIABLE; ++i) {
         varArr->arr[i].value = -1;
@@ -20,6 +22,8 @@ void FreeVarArr(struct var_arr_t* varArr) {
 }
 
 int AddVar(struct var_arr_t* varArr) {
+    if (varArr->size == varArr->capacity)
+        return -1;
     int i = varArr->size;
     varArr->arr[i].value = 0;
     varArr->size++;

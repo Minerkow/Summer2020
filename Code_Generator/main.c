@@ -5,17 +5,10 @@
 #include "Tree.h"
 #include "Random.h"
 
-int main() {
+int main(int argc, char** argv) {
     srand(time(0));
-    struct tree_t* tree = GenerateRandomTree(4);
-    TreeIntoTxt(tree);
-    //struct node_t* top = RandomSent();
-    //assert(top);
-    PrintTree(tree->top);
-    //inOrder(tree->top);
-    //FreeTree(tree->top);
-    //free(tree->top);
-    //free(tree);
+    struct tree_t* tree = GenerateRandomTree(NUM_SENT);
+    TreeIntoTxt(tree, argv);
     return 0;
 }
 

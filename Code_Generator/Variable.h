@@ -12,6 +12,7 @@ struct variable_t {
 struct var_arr_t {
     struct variable_t* arr;
     size_t size;
+    size_t capacity;
 };
 
 struct var_arr_t* CreateVarArr();

@@ -31,7 +31,7 @@ void PrintArr(int* arr, size_t len);
 
 void Inorder(struct node_t* node);
 
-void TreeIntoTxt(struct tree_t* tree);
+void TreeIntoTxt(struct tree_t* tree, char** argv);
 
 void NodeIntoTxt(struct node_t* node, FILE* file);
 

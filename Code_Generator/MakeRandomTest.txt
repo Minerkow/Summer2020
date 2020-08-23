@@ -1,0 +1,28 @@
+CC = gcc
+CFLAGS = -O0 -g -Wall -std=c99 -I include
+SOURCES = Random.c Tree.c Variable.c mainRTest.c
+HEADERS = Random.h Lexem.h Tree.h Variable.h
+OBJECTS = $(SOURCES:.c=.o)
+
+Random.o: source/Random.c include/Random.h include/Lexem.h
+	$(CC) $(CFLAGS) source/Random.c -c -o object/Random.o
+
+Tree.o: source/Tree.c include/Tree.h include/Lexem.h
+	$(CC) $(CFLAGS) source/Tree.c -c -o object/Tree.o
+
+Variable.o: source/Variable.c include/Variable.h include/Lexem.h
+	$(CC) $(CFLAGS) source/Variable.c -c -0 object/Variable.o
+
+main.o: mainRTest.c
+	$(CC) $(CFLAGS) mainRTest.c -c -o object/mainRTest.o
+
+.PHONY: all
+all: Variable.o Tree.o Random.o mainRTest.o
+	$(CC) $(CFLAGS) object/Variable.o object/Tree.o object/Random.o object/mainRTest.o -o RandomGenerator
+
+
+.PHONY: clean
+clean:
+	rm -r -f $(OBJECTS)
+	rm -f main
+	rm -r -f cache.o

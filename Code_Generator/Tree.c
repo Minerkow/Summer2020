@@ -186,8 +186,8 @@ void Inorder(struct node_t* node){
     Inorder(node->right);
 }
 
-void TreeIntoTxt(struct tree_t* tree) {
-    FILE* RandomCode = fopen("/home/bibi/CLionProject/Vladimirov/CodeGenerator/RandomTest.cl", "w");
+void TreeIntoTxt(struct tree_t* tree, char** argv) {
+    FILE* RandomCode = fopen(argv[1], "w");
     assert(RandomCode);
     NodeIntoTxt(tree->top, RandomCode);
     fclose(RandomCode);
