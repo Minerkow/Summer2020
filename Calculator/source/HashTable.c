@@ -1,5 +1,5 @@
 
-#include "HashTable.h"
+#include "../include/HashTable.h"
 
 struct variable_t
 {

@@ -1,8 +1,10 @@
 
 #include <stdio.h>
-#include "Parser.h"
-#include "HashTable.h"
-#include "Lexer.h"
+#include "../include/Parser.h"
+#include "../include/HashTable.h"
+#include "../include/Lexer.h"
+
+enum {MAX_CYCLE_LEN = 100000};
 
 static struct lexem_t get_cur_lexem (int i, struct lex_array_t* ptr);
 static int get_cur_size(struct lex_array_t* ptr);
@@ -10,7 +12,6 @@ static bool is_add_sub (int i);
 static bool is_mul_div(int i);
 static int is_brace(int i);
 static bool is_assign(int i);
-//static bool is_end(int i);
 static bool is_stop(int i);
 static bool is_num_input_variable(int i);
 static bool is_print_assign(int i);
@@ -115,12 +116,10 @@ static bool is_print_assign(int i){
     return (get_cur_lexem(i, NULL).kind == COMMAND &&
             (get_cur_lexem(i, NULL).lex.com == PRINT ||
             get_cur_lexem(i, NULL).lex.com == ASSIGN));
-}    //dump_lexarray(larr);
-    //printf("\n");
+}
 
 void RunProgramm(int argc, char** argv){
     FILE* f = fopen(argv[1], "r");
-   //FILE* f =  fopen("/home/bibi/CLionProject/Vladimirov/Calculator/test.expr", "r");
     assert(f);
     int res = 0;
     struct lex_array_t larr = {};
@@ -135,11 +134,7 @@ void RunProgramm(int argc, char** argv){
         fprintf(stderr, "Larr ERROR, line - %d", __LINE__);
         exit(ERROR);
     }
-    //dump_lexarray(larr);
-    //printf("\n");
     struct node_t* top = BuildTree(larr);
-    //print_tree(top);
-    //printf("\n");
     Calculation(top);
     free_tree(top);
     free_all(larr);
@@ -187,9 +182,16 @@ int Calculation(struct node_t* top){
                 return 0;
             case WHILE:
                 l = Calculation(top->left);
+                int i = 0;
                 while (l == true) {
+                    i++;
                     Calculation(top->right);
                     l = Calculation(top->left);
+                    if (i == MAX_CYCLE_LEN)
+                    {
+                        fprintf(stderr, "Infinity cycle");
+                        exit(ERROR);
+                    }
                 }
                 return 0;
             case INPUT:
@@ -292,9 +294,9 @@ struct node_t* Sentense(int* i){
 }
 
 struct node_t* Comm(int* i) {
+    //<-- assert(if(i != NULL && "Comm shall have non-null input");
     struct node_t *node = NULL;
     struct node_t *comm_left = Comp(i);
-    //printf("_%d_", *i);
     if (is_stop(*i))
         return comm_left;
     node = Create_Node();
@@ -302,15 +304,25 @@ struct node_t* Comm(int* i) {
     if (is_print(*i)){
         (*i)++;
        node->left = Comp(i);
+        if (node->left == NULL) {
+            fprintf(stderr, "Waiting expresion, line - %d, i - %d", __LINE__, *i);
+            exit(ERROR);
+        }
        node->right = Create_Node();
        node->right->lexem.kind = VOID;
     }
     if (is_assign(*i)) {
         (*i)++;
        node->left = comm_left;
-        //printf("_%d_", *i);
-        node->right = Comp(i);
-        //printf("_%d_", *i);
+        if (node->left == NULL) {
+            fprintf(stderr, "Waiting variable, line - %d, i - %d", __LINE__, *i);
+            exit(ERROR);
+        }
+       node->right = Comp(i);
+        if (node->right == NULL) {
+            fprintf(stderr, "Waiting expresion, line - %d, i - %d", __LINE__, *i);
+            exit(ERROR);
+        }
     }
     if (is_if(*i) || is_while(*i)) {
         (*i)++;
@@ -320,6 +332,10 @@ struct node_t* Comm(int* i) {
             exit(ERROR);
         }
         (*i)++;
+        if (is_figur_brace(*i) == LFIGURBRAC) {
+            fprintf(stderr, "Too many brace - '{', line - %d, i - %d", __LINE__, *i);
+            exit(ERROR);
+        }
         node->right = Sentense(i);
         if (is_figur_brace(*i) != RFIGURBRAC) {
             fprintf(stderr, "Waiting figure brace - '}'");
@@ -334,8 +350,8 @@ struct node_t* Comm(int* i) {
 
 struct node_t* Comp(int *i)
 {
+    //<-- assert(if(i != NULL && "Comp shall have non-null input");
     struct node_t* node = NULL;
-
     struct node_t* comp_left = Expr(i);
     if (is_stop(*i))
         return comp_left;
@@ -353,7 +369,15 @@ struct node_t* Comp(int *i)
         } else {
             (*i)++;
             node->left = comp_left;
+            if (node->left == NULL) {
+                fprintf(stderr, "Waiting expresion , line - %d, i - %d", __LINE__, *i);
+                exit(ERROR);
+            }
             node->right = Expr(i);
+            if (node->right == NULL) {
+                fprintf(stderr, "Waiting expresion , line - %d, i - %d", __LINE__, *i);
+                exit(ERROR);
+            }
             comp_left = node;
         }
     }
@@ -362,6 +386,7 @@ struct node_t* Comp(int *i)
 
 struct node_t* Expr(int* i)
 {
+    //<-- assert(if(i != NULL && "Expr shall have non-null input");
     struct node_t* node = NULL;
     struct node_t* expr_left = Mult(i);
     if (is_stop(*i))
@@ -376,12 +401,9 @@ struct node_t* Expr(int* i)
         node->lexem = get_cur_lexem(*i, NULL);
         (*i)++;
 
-        //printf("_%d_", get_cur_lexem(*i, NULL).kind);
-        //printf("(%d)\n", *i);
         struct lexem_t lexem = get_cur_lexem(*i, NULL);
         if (lexem.kind != NUM && lexem.kind != BRACE && lexem.kind != VARIABLE)
         {
-            //printf("{%d}", *i);
             fprintf(stderr, "Expected expression, line - %d", __LINE__);
             exit(ERROR);
         }
@@ -396,22 +418,14 @@ struct node_t* Expr(int* i)
 
 struct node_t* Mult(int* i)
 {
+    //<-- assert(if(i != NULL && "Mult shall have non-null input");
     struct node_t* node = NULL;
     struct node_t* mult_left = Term(i);
-/*    if (*i >= get_cur_size(NULL) - 1)
-        return mult_left;*/
-/*    if (is_stop(*i))
-        return mult_left;*/
 
     while (is_mul_div(*i) && get_cur_lexem(*i, NULL).kind == OP) {
 
-/*        if (is_stop(*i))
-            return mult_left;*/
-
         node = Create_Node();
         node->lexem = get_cur_lexem(*i, NULL);
-
-        //printf("{%d}\n", *i);
 
         (*i)++;
 
@@ -431,6 +445,7 @@ struct node_t* Mult(int* i)
 
 struct node_t* Term (int* i)
 {
+    //<-- assert(if(i != NULL && "Term shall have non-null input");
     struct node_t* node = NULL;
     if (is_num_input_variable(*i))
     {
@@ -446,7 +461,6 @@ struct node_t* Term (int* i)
     }
     if(is_brace(*i) == LBRAC)
     {
-        //fprintf(stderr, "{%d}", *i);
         (*i)++;
         if (is_brace(*i) == RBRAC)
         {

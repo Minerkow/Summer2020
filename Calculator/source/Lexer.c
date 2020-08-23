@@ -1,5 +1,5 @@
-#include "HashTable.h"
-#include "Lexer.h"
+#include "../include/HashTable.h"
+#include "../include/Lexer.h"
 
 static void swap_lexems(struct lex_array_t* larr, int index1, int index2)
 {
@@ -249,7 +249,6 @@ struct lex_array_t lex_string(const char *str) {
         }
     }
     larr.lexems = (struct lexem_t *)realloc(larr.lexems, sizeof(struct lexem_t) * larr.size );
-    //free_hash_table(hash_table);
     return larr;
 }
 
