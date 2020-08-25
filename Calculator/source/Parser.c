@@ -305,7 +305,7 @@ struct node_t* Comm(int* i) {
         (*i)++;
        node->left = Comp(i);
         if (node->left == NULL) {
-            fprintf(stderr, "Waiting expresion, line - %d, i - %d", __LINE__, *i);
+            fprintf(stderr, "Waiting expresion for print, line - %d, i - %d", __LINE__, *i);
             exit(ERROR);
         }
        node->right = Create_Node();
@@ -315,12 +315,12 @@ struct node_t* Comm(int* i) {
         (*i)++;
        node->left = comm_left;
         if (node->left == NULL) {
-            fprintf(stderr, "Waiting variable, line - %d, i - %d", __LINE__, *i);
+            fprintf(stderr, "Waiting variable for assign, line - %d, i - %d", __LINE__, *i);
             exit(ERROR);
         }
        node->right = Comp(i);
         if (node->right == NULL) {
-            fprintf(stderr, "Waiting expresion, line - %d, i - %d", __LINE__, *i);
+            fprintf(stderr, "Waiting expresion for assign, line - %d, i - %d", __LINE__, *i);
             exit(ERROR);
         }
     }
@@ -338,7 +338,7 @@ struct node_t* Comm(int* i) {
         }
         node->right = Sentense(i);
         if (is_figur_brace(*i) != RFIGURBRAC) {
-            fprintf(stderr, "Waiting figure brace - '}'");
+            fprintf(stderr, "Waiting figure brace - '}' ");
             exit(ERROR);
         }
     }
@@ -370,12 +370,12 @@ struct node_t* Comp(int *i)
             (*i)++;
             node->left = comp_left;
             if (node->left == NULL) {
-                fprintf(stderr, "Waiting expresion , line - %d, i - %d", __LINE__, *i);
+                fprintf(stderr, "Waiting left expresion for bool expr , line - %d, i - %d", __LINE__, *i);
                 exit(ERROR);
             }
             node->right = Expr(i);
             if (node->right == NULL) {
-                fprintf(stderr, "Waiting expresion , line - %d, i - %d", __LINE__, *i);
+                fprintf(stderr, "Waiting right expresion for bool expr , line - %d, i - %d", __LINE__, *i);
                 exit(ERROR);
             }
             comp_left = node;
@@ -404,7 +404,7 @@ struct node_t* Expr(int* i)
         struct lexem_t lexem = get_cur_lexem(*i, NULL);
         if (lexem.kind != NUM && lexem.kind != BRACE && lexem.kind != VARIABLE)
         {
-            fprintf(stderr, "Expected expression, line - %d", __LINE__);
+            fprintf(stderr, "Expected expression, line - %d, index - %d", __LINE__, *i);
             exit(ERROR);
         }
         node->left = expr_left;
@@ -432,7 +432,7 @@ struct node_t* Mult(int* i)
         struct lexem_t lexem = get_cur_lexem(*i, NULL);
         if (lexem.kind != NUM && lexem.kind != BRACE && lexem.kind != VARIABLE)
         {
-            fprintf(stderr,"Expected expression, line - %d", __LINE__);
+            fprintf(stderr,"Expected expression, line - %d. index - %d", __LINE__, *i);
             exit(ERROR);
         }
         node->left = mult_left;

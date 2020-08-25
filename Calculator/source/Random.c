@@ -70,12 +70,16 @@ int* RandomIntArray(size_t numNode) {
 }
 
 enum command_t RandomCommand() {
-    int r = rand() % COMMAND_NUM;
+    int r = rand() % (COMMAND_NUM * 2);
     switch (r) {
         case 0: return PRINT;
-        case 1: return ASSIGN;
-        case 2: return IF;
-        case 3: return WHILE;
+        case 1: return PRINT;
+        case 2: return PRINT;
+        case 3: return ASSIGN;
+        case 4: return ASSIGN;
+        case 5: return ASSIGN;
+        case 6: return IF;
+        case 7: return WHILE;
         default:;
     }
     return PRINT;
