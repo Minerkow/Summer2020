@@ -142,12 +142,11 @@ void RunProgramm(int argc, char** argv){
         fprintf(stderr, "Larr ERROR, line - %d", __LINE__);
         exit(ERROR);
     }
-    //dump_lexarray(larr);
-    //printf("\n");
     struct node_t* top = BuildTree(larr);
     Calculation(top);
     free_tree(top);
     free_all(larr);
+    free(inp);
 }
 
 struct node_t* BuildTree (struct lex_array_t larr)
