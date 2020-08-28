@@ -118,15 +118,23 @@ static bool is_print_assign(int i){
             get_cur_lexem(i, NULL).lex.com == ASSIGN));
 }
 
+int TxtLen(FILE* txt) {
+    assert(txt);
+    fseek(txt, 0, SEEK_END);
+    int length = ftell(txt);
+    fseek(txt, 0, SEEK_SET);
+    return length;
+}
+
 void RunProgramm(int argc, char** argv){
     FILE* f = fopen(argv[1], "r");
     assert(f);
-    int res = 0;
+    size_t res = 0;
     struct lex_array_t larr = {};
-    char inp[MAXLEN] = {0};
-
-    res = fscanf( f,  "%1023c", inp);
-    assert(res == 1);
+    int len = TxtLen(f);
+    char* inp = calloc(len + 1, sizeof(char));
+    res = fread(inp, sizeof(char), len, f);
+    assert(res != 0);
 
     larr = lex_string(inp);
 
@@ -134,6 +142,8 @@ void RunProgramm(int argc, char** argv){
         fprintf(stderr, "Larr ERROR, line - %d", __LINE__);
         exit(ERROR);
     }
+    //dump_lexarray(larr);
+    //printf("\n");
     struct node_t* top = BuildTree(larr);
     Calculation(top);
     free_tree(top);
@@ -148,7 +158,7 @@ struct node_t* BuildTree (struct lex_array_t larr)
     struct node_t* top = Sentense(&i);
     if (top == NULL)
     {
-        fprintf (stderr, "Empty input, line - %d", __LINE__);
+        fprintf (stderr, "Empty input, Code Line - %d", __LINE__);
         exit(ERROR);
     }
     return top;
@@ -169,7 +179,7 @@ int Calculation(struct node_t* top){
             case ASSIGN:
                 if (top->left->lexem.kind != VARIABLE)
                 {
-                    fprintf(stderr, "Assign ERROR, line - %d", __LINE__);
+                    fprintf(stderr, "Assign ERROR, line - %zu", top->left->lexem.line);
                     exit(ERROR);
                 }
                 r = Calculation(top->right);
@@ -253,7 +263,7 @@ int Calc (int l, int r, struct node_t *top)
                     return l * r;
                 case DIV:
                     if (r == 0){
-                        fprintf(stderr, "Division by zero, line - %d", __LINE__);
+                        fprintf(stderr, "Division by zero, line - %zu", top->lexem.line);
                         exit(ERROR);
                     }
                     return l / r;
@@ -282,7 +292,7 @@ struct node_t* Sentense(int* i){
         node->left = Comm(i);
         if(!is_stop(*i) && is_figur_brace(*i) != RFIGURBRAC)
         {
-            fprintf(stderr, "\nExpected ';' : line - %d, i - %d", __LINE__, *i);
+            fprintf(stderr, "\nExpected ';' : line - %zu, i - %d", get_cur_lexem(*i, NULL).line, *i);
             exit(ERROR);
         }
         (*i)++;
@@ -305,7 +315,7 @@ struct node_t* Comm(int* i) {
         (*i)++;
        node->left = Comp(i);
         if (node->left == NULL) {
-            fprintf(stderr, "Waiting expresion for print, line - %d, i - %d", __LINE__, *i);
+            fprintf(stderr, "Waiting expresion, line - %zu, i - %d", node->lexem.line, *i);
             exit(ERROR);
         }
        node->right = Create_Node();
@@ -315,12 +325,12 @@ struct node_t* Comm(int* i) {
         (*i)++;
        node->left = comm_left;
         if (node->left == NULL) {
-            fprintf(stderr, "Waiting variable for assign, line - %d, i - %d", __LINE__, *i);
+            fprintf(stderr, "Waiting variable, line - %zu, i - %d", node->lexem.line, *i);
             exit(ERROR);
         }
        node->right = Comp(i);
         if (node->right == NULL) {
-            fprintf(stderr, "Waiting expresion for assign, line - %d, i - %d", __LINE__, *i);
+            fprintf(stderr, "Waiting expresion, line - %zu, i - %d", node->lexem.line, *i);
             exit(ERROR);
         }
     }
@@ -328,17 +338,17 @@ struct node_t* Comm(int* i) {
         (*i)++;
         node->left = Comp(i);
         if (is_figur_brace(*i) != LFIGURBRAC) {
-            fprintf(stderr, "Waiting figure brace - '{', line - %d, i - %d", __LINE__, *i);
+            fprintf(stderr, "Waiting figure brace - '{', line - %zu, i - %d", get_cur_lexem(*i, NULL).line, *i);
             exit(ERROR);
         }
         (*i)++;
         if (is_figur_brace(*i) == LFIGURBRAC) {
-            fprintf(stderr, "Too many brace - '{', line - %d, i - %d", __LINE__, *i);
+            fprintf(stderr, "Too many brace - '{', line - %zu, i - %d", get_cur_lexem(*i, NULL).line, *i);
             exit(ERROR);
         }
         node->right = Sentense(i);
         if (is_figur_brace(*i) != RFIGURBRAC) {
-            fprintf(stderr, "Waiting figure brace - '}' ");
+            fprintf(stderr, "Waiting figure brace - '}', line - %zu", get_cur_lexem(*i, NULL).line);
             exit(ERROR);
         }
     }
@@ -370,12 +380,12 @@ struct node_t* Comp(int *i)
             (*i)++;
             node->left = comp_left;
             if (node->left == NULL) {
-                fprintf(stderr, "Waiting left expresion for bool expr , line - %d, i - %d", __LINE__, *i);
+                fprintf(stderr, "Waiting expresion , line - %zu, i - %d", get_cur_lexem(*i, NULL).line, *i);
                 exit(ERROR);
             }
             node->right = Expr(i);
             if (node->right == NULL) {
-                fprintf(stderr, "Waiting right expresion for bool expr , line - %d, i - %d", __LINE__, *i);
+                fprintf(stderr, "Waiting expresion , line - %zu, i - %d", get_cur_lexem(*i, NULL).line, *i);
                 exit(ERROR);
             }
             comp_left = node;
@@ -404,7 +414,7 @@ struct node_t* Expr(int* i)
         struct lexem_t lexem = get_cur_lexem(*i, NULL);
         if (lexem.kind != NUM && lexem.kind != BRACE && lexem.kind != VARIABLE)
         {
-            fprintf(stderr, "Expected expression, line - %d, index - %d", __LINE__, *i);
+            fprintf(stderr, "Expected expression, line - %zu", get_cur_lexem(*i, NULL).line);
             exit(ERROR);
         }
         node->left = expr_left;
@@ -432,7 +442,7 @@ struct node_t* Mult(int* i)
         struct lexem_t lexem = get_cur_lexem(*i, NULL);
         if (lexem.kind != NUM && lexem.kind != BRACE && lexem.kind != VARIABLE)
         {
-            fprintf(stderr,"Expected expression, line - %d. index - %d", __LINE__, *i);
+            fprintf(stderr,"Expected expression, line - %zu", get_cur_lexem(*i, NULL).line);
             exit(ERROR);
         }
         node->left = mult_left;
@@ -453,7 +463,7 @@ struct node_t* Term (int* i)
         node->lexem = get_cur_lexem(*i, NULL);
         if (get_cur_lexem(*i + 1, NULL).kind == NUM)
         {
-            fprintf(stderr, "Two numbers in a row, line - %d", __LINE__);
+            fprintf(stderr, "Two numbers in a row, line - %zu", get_cur_lexem(*i, NULL).line);
             exit(ERROR);
         }
         (*i)++;
@@ -464,13 +474,13 @@ struct node_t* Term (int* i)
         (*i)++;
         if (is_brace(*i) == RBRAC)
         {
-            fprintf(stderr, "Extra brace, line - %d", __LINE__);
+            fprintf(stderr, "Extra brace, line - %zu", get_cur_lexem(*i, NULL).line);
             exit(ERROR);
         }
         node = Comp(i);
         if (is_brace(*i) != RBRAC)
         {
-            fprintf(stderr, "Extra brace, line - %d, i = %d", __LINE__, *i);
+            fprintf(stderr, "Extra brace, line - %zu, i = %d", get_cur_lexem(*i, NULL).line, *i);
             exit(ERROR);
         }
         (*i)++;

@@ -34,6 +34,7 @@ struct lexem_t {
         enum compar_signs_t cs;
         int num;
     } lex;
+    size_t line;
 };
 
 // array of lexems

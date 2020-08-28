@@ -30,6 +30,8 @@ struct lex_array_t lex_string(const char *str) {
     struct variable_t* hash_table = create_hash_table();
     variable_value(0, 0, false, hash_table);
 
+    size_t line = 1;
+
     while (str[i])
     {
         if (larr.size == larr.capacity ) {
@@ -42,6 +44,8 @@ struct lex_array_t lex_string(const char *str) {
 
         if (isspace(str[i]))
         {
+            if (str[i] == '\n')
+                line++;
             i++;
             continue;
         }
@@ -51,6 +55,7 @@ struct lex_array_t lex_string(const char *str) {
         if (isdigit(str[i]))
         {
             larr.lexems[larr.size].kind = NUM;
+            larr.lexems[larr.size].line = line;
             larr.lexems[larr.size].lex.num = 0;
             while(isdigit(str[i]))
             {
@@ -66,6 +71,7 @@ struct lex_array_t lex_string(const char *str) {
         if (str[i] == '+' || str[i] == '-' || str[i] == '*' || str[i] == '/')
         {
             larr.lexems[larr.size].kind = OP;
+            larr.lexems[larr.size].line = line;
             int code = str[i];
             switch ( code )
             {
@@ -90,6 +96,7 @@ struct lex_array_t lex_string(const char *str) {
         if (iscomparsigns(str, i))
         {
             larr.lexems[larr.size].kind = COMPAR_SIGNS;
+            larr.lexems[larr.size].line = line;
             switch (str[i])
             {
                 case '>':
@@ -134,6 +141,7 @@ struct lex_array_t lex_string(const char *str) {
         if (str[i] == '(' || str[i] == ')')
         {
             larr.lexems[larr.size].kind = BRACE;
+            larr.lexems[larr.size].line = line;
             int code = str[i];
             switch (code)
             {
@@ -153,6 +161,7 @@ struct lex_array_t lex_string(const char *str) {
         if (str[i] == '{' || str[i] == '}')
         {
             larr.lexems[larr.size].kind = BRACE;
+            larr.lexems[larr.size].line = line;
             switch (str[i])
             {
                 case '{':
@@ -175,6 +184,7 @@ struct lex_array_t lex_string(const char *str) {
             int numsymbol = 0;
             int hash = 0;
             larr.lexems[larr.size].kind = VARIABLE;
+            larr.lexems[larr.size].line = line;
             char* word = (char*)calloc(MAXLENWORD + 1, sizeof(char));
             while (isalpha(str[i]) || isdigit(str[i]))
             {
@@ -192,6 +202,7 @@ struct lex_array_t lex_string(const char *str) {
             if (!strcmp(word, "print"))
             {
                 larr.lexems[larr.size].kind = COMMAND;
+                larr.lexems[larr.size].line = line;
                 larr.lexems[larr.size].lex.com = PRINT;
                 larr.size++;
                 continue;
@@ -200,6 +211,7 @@ struct lex_array_t lex_string(const char *str) {
             if (!strcmp(word, "if"))
             {
                 larr.lexems[larr.size].kind = COMMAND;
+                larr.lexems[larr.size].line = line;
                 larr.lexems[larr.size].lex.com = IF;
                 larr.size++;
                 if (larr.size)
@@ -209,6 +221,7 @@ struct lex_array_t lex_string(const char *str) {
             if (!strcmp(word, "while"))
             {
                 larr.lexems[larr.size].kind = COMMAND;
+                larr.lexems[larr.size].line = line;
                 larr.lexems[larr.size].lex.com = WHILE;
                 larr.size++;
                 continue;
@@ -224,6 +237,7 @@ struct lex_array_t lex_string(const char *str) {
         if (str[i] == '?')
         {
             larr.lexems[larr.size].kind = COMMAND;
+            larr.lexems[larr.size].line = line;
             larr.lexems[larr.size].lex.com = INPUT;
             larr.size++;
             i ++;
@@ -233,6 +247,7 @@ struct lex_array_t lex_string(const char *str) {
         if (str[i] == '=')
         {
             larr.lexems[larr.size].kind = COMMAND;
+            larr.lexems[larr.size].line = line;
             larr.lexems[larr.size].lex.com = ASSIGN;
             larr.size++;
             i++;
@@ -242,6 +257,7 @@ struct lex_array_t lex_string(const char *str) {
         if (str[i] == ';')
         {
             larr.lexems[larr.size].kind = COMMAND;
+            larr.lexems[larr.size].line = line;
             larr.lexems[larr.size].lex.com = END_COMMAND;
             larr.size++;
             i++;
@@ -322,6 +338,7 @@ print_lexem(struct lexem_t lxm) {
         case COMPAR_SIGNS: print_compar_signs(lxm.lex.cs); break;
         default: assert(0 && "unknown lexem");
     }
+    printf (" LINE - %zu ", lxm.line);
 }
 
 void dump_lexarray(struct lex_array_t pl) {
